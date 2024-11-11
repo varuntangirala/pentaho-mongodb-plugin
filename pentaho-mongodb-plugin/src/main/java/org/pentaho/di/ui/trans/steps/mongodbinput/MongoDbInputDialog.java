@@ -1,19 +1,15 @@
-/*!
- * Copyright 2010 - 2022 Hitachi Vantara.  All rights reserved.
+/*! ******************************************************************************
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Pentaho
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) 2024 by Hitachi Vantara, LLC : http://www.pentaho.com
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Use of this software is governed by the Business Source License included
+ * in the LICENSE.TXT file.
  *
- */
+ * Change Date: 2029-07-20
+ ******************************************************************************/
+
 
 package org.pentaho.di.ui.trans.steps.mongodbinput;
 
@@ -57,6 +53,7 @@ import org.pentaho.di.trans.TransPreviewFactory;
 import org.pentaho.di.trans.step.BaseStepMeta;
 import org.pentaho.di.trans.step.StepDialogInterface;
 import org.pentaho.di.trans.steps.mongodbinput.DiscoverFieldsCallback;
+import org.pentaho.di.trans.steps.mongodbinput.MongoDbInput;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputData;
 import org.pentaho.di.trans.steps.mongodbinput.MongoDbInputMeta;
 import org.pentaho.di.ui.core.FormDataBuilder;
@@ -1751,18 +1748,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
         TableItem item = m_tagsView.getNonEmpty( i );
 
         String set = item.getText( 1 ).trim();
-        if ( !set.startsWith( "{" ) ) { //$NON-NLS-1$
-          set = "{" + set; //$NON-NLS-1$
-        }
-
-        if ( !set.endsWith( "}" ) ) { //$NON-NLS-1$
-          set = set + "}"; //$NON-NLS-1$
-        }
-
-        DBObject setO = (DBObject) JSON.parse( set );
-        if ( setO != null ) {
-          tagSets.add( setO );
-        }
+        MongoDbInput.setupDBObjects( tagSets, set );
       }
 
       if ( tagSets.size() > 0 ) {
@@ -1777,20 +1763,7 @@ public class MongoDbInputDialog extends BaseStepDialog implements StepDialogInte
             } catch ( MongoDbException e ) {
               throw new KettleException( e );
             }
-            List<String> satisfy = new ArrayList<String>();
-            try {
-              try {
-                satisfy = wrapper.getReplicaSetMembersThatSatisfyTagSets( tagSets );
-              } catch ( MongoDbException e ) {
-                throw new KettleException( e );
-              }
-            } finally {
-              try {
-                wrapper.dispose();
-              } catch ( MongoDbException e ) {
-                //Ignore
-              }
-            }
+            List<String> satisfy = MongoDbInput.getReplicaMemberBasedOnTagSet( tagSets, wrapper );
 
             if ( satisfy.size() == 0 ) {
               logBasic( BaseMessages
